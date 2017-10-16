@@ -1,29 +1,26 @@
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.test.todo
 
-val xSize = 16
-val ySize = 16
+val xSize = 48
+val ySize = 48
+val correction = Math.max(xSize, ySize) / 16.0 / 100.0
 val field = Array(ySize, {_ -> BooleanArray(xSize, {_ -> true})})
 val ways = ArrayList<Pair<Int, Int>>()
 
 fun main(args: Array<String>) {
+    step()
+    while ((ways.size.toDouble() / (xSize * ySize).toDouble()) < (0.5 + correction))
+        step(false)
     printMaze()
-    println("===")
-    firstStep()
-    for (i in 0..1024)
-        firstStep(false)
-    printMaze()
+    println((ways.size.toDouble()) / (xSize * ySize).toDouble())
 }
 
-fun firstStep(isFirst: Boolean = true) {
+fun step(isFirst: Boolean = true) {
     var next =
             if (isFirst)
                 random()
             else
-                select()
-
-    println("${if (isFirst) "random" else "select"}() => ${next.first}, ${next.second}")
+                nextPoint(select())
 
     while (canExtend(next)) {
         extend(next)
@@ -32,7 +29,6 @@ fun firstStep(isFirst: Boolean = true) {
 }
 
 fun canExtend(target: Pair<Int, Int>): Boolean {
-    todo { "端っこまで伸びるように" }
     val x = target.first
     val y = target.second
 
@@ -61,15 +57,12 @@ fun wallCount(pnts: Array<Pair<Int, Int>>): Int {
 fun nextPoint(current: Pair<Int, Int>): Pair<Int, Int> {
     val x = current.first
     val y = current.second
-    val rdm = Random()
-    val dir = rdm.nextInt(3)
-    val nxt = when(dir) {
-        0 -> Pair(x + 1, y)
-        1 -> Pair(x, y + 1)
-        2 -> Pair(x - 1, y)
-        3 -> Pair(x, y - 1)
-        else -> Pair(-99, -99)
-    }
+    val nears = listOf(
+            Pair(x + 1, y),
+            Pair(x, y + 1),
+            Pair(x - 1, y),
+            Pair(x, y - 1)).shuffle()
+    val nxt = nears[0]
 
     try {
         get(nxt)
@@ -82,8 +75,8 @@ fun nextPoint(current: Pair<Int, Int>): Pair<Int, Int> {
 
 fun random(): Pair<Int, Int> {
     val rdm = Random()
-    val x = rdm.nextInt(xSize)
-    val y = rdm.nextInt(ySize)
+    val x = rdm.nextInt(xSize - 1) + 1
+    val y = rdm.nextInt(ySize - 1) + 1
 
     return if (get(x, y))
         Pair(x, y)
@@ -99,20 +92,17 @@ fun select(): Pair<Int, Int> {
 }
 
 fun printMaze() {
-    for (i in 0..xSize)
-        print("■")
-    println("■")
-
     for (col in field) {
-        print("■")
         for (pnt in col)
             print(if (pnt) "■" else "　")
-        println("■")
+        println()
     }
+}
 
-    for (i in 0..xSize)
-        print("■")
-    println("■")
+fun <T> List<T>.shuffle(): List<T> {
+    val list = this.toMutableList()
+    java.util.Collections.shuffle(list)
+    return list
 }
 
 fun extend(pnt: Pair<Int, Int>) {
